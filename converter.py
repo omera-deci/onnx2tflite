@@ -1,7 +1,7 @@
 import os
 import logging
 import argparse
-from utils import load_onnx_modelproto, keras_builder, tflite_builder
+from .utils import load_onnx_modelproto, keras_builder, tflite_builder
 
 LOG = logging.getLogger("converter running:")
 

@@ -8,7 +8,7 @@ from tensorflow import keras
 from onnx import numpy_helper
 from utils.op_registry import OPERATOR
 
-from layers import conv_layers
+from ..layers import conv_layers
 
 def representative_dataset_gen(img_root, img_size, mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375]):
     '''
