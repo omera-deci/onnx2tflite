@@ -1,8 +1,8 @@
 import tensorflow as tf
 from tensorflow import keras
 
-from layers.dimension_utils import channel_to_last_dimension
-from utils.op_registry import OPERATOR
+from .dimension_utils import channel_to_last_dimension
+from ..utils.op_registry import OPERATOR
 
 @OPERATOR.register_operator("Relu")
 class TFRelu():

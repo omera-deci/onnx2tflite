@@ -4,8 +4,8 @@ import numpy as np
 import tensorflow as tf
 from tensorflow import keras
 
-from utils.op_registry import OPERATOR
-from layers.dimension_utils import intfloat_to_list
+from ..utils.op_registry import OPERATOR
+from .dimension_utils import intfloat_to_list
 
 LOG = logging.getLogger("common_layers :")
 
