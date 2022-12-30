@@ -85,12 +85,16 @@ class TFConcat():
 class TFReshape():
     def __init__(self, tensor_grap, node_weights, node_inputs, node_attribute, *args, **kwargs):
         super().__init__()
-        self.out_shape = node_weights[node_inputs[1]]
+        shape_name = node_inputs[1]
+        if shape_name in node_weights:
+            self.out_shape = node_weights[shape_name]
+        else:
+            self.out_shape = tensor_grap[shape_name]
         self.trans_in, self.trans_out = None, None
         LOG.info("Reshape will process tensor after change back to NCHW format.")
         shape_len = len(tensor_grap[node_inputs[0]].shape)
-        self.trans_in = [0, shape_len-1] + [n for n in range(1, shape_len-1)]
-        self.trans_out = [0] + [n for n in range(2, len(self.out_shape))] + [1]
+        self.trans_in = [0, shape_len - 1] + [n for n in range(1, shape_len - 1)]
+        self.trans_out = [0] + [n for n in range(2, self.out_shape.shape[0])] + [1]
 
     def __call__(self, inputs):
         inputs = tf.transpose(inputs, perm=self.trans_in)
