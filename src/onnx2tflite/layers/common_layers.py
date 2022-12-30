@@ -301,3 +301,11 @@ class TFCast():
                 inputs = tf.cast(inputs, dtype=self.tf_cast_map[self.cast_to])
 
         return inputs
+
+@OPERATOR.register_operator("Shape")
+class TFShape:
+    def __init__(self, *args, **kwargs):
+        super().__init__()
+
+    def __call__(self, inputs):
+        return tf.shape(inputs)
