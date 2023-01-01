@@ -106,32 +106,25 @@ class TFReshape():
 class TFFlatten():
     def __init__(self, tensor_grap, node_weights, node_inputs, node_attribute, *args, **kwargs)->None:
         super().__init__()
-        num_elements = int(tensor_grap[node_inputs[0]].shape.num_elements()/tensor_grap[node_inputs[0]].shape[0])
-        input_shape = tensor_grap[node_inputs[0]].shape
-        self.flat = tf.keras.layers.Flatten()
-        '''
-            ensure memory order match, for example:
-            onnx = (B, 2, 3, 4).reshape(B, -1)
-            tflite = (B, 3, 4, 2).reshape(B, -1)
-            we can observe that:
-            onnx.shape == tflite.shape, but np.sum(onnx-tflite) != 0
-            it's cause memory order of two vars is different, we must make tflite back to onnx by transpose.
-            generally, this situation is general one, below is just special situation and most appear in cnn.
-            onnx = (B, 512, 1, 1)
-            tflite = (B, 1, 1, 512)
-            or = (B, 1, 512, 1)
-            these memory order are all same.
-        '''
-        self.perm = None
-        if num_elements != max(input_shape[1:]):
-            self.perm = [0, len(input_shape)-1]
-            for i in range(len(input_shape)-2):
-                self.perm.append(i+1)
+
+        self.axis = node_attribute.get("axis", 1)
+        if self.axis < 0:
+            raise ValueError("Negative axis not supported yet")
 
     def __call__(self, inputs):
-        if self.perm:
-            inputs = tf.transpose(inputs, perm=self.perm)
-        return self.flat(inputs)
+        # transpose to channels-first
+        axes = tuple(range(len(inputs.shape)))
+        axes_perm = axes[0:1] + axes[-1:] + axes[1:-1]
+        inputs = tf.transpose(inputs, perm=axes_perm)
+
+        # flatten
+        inputs_shape = tf.shape(inputs)
+        new_shape = tf.concat(
+            [inputs_shape[0 : self.axis], tf.math.reduce_prod(inputs_shape[self.axis :], keepdims=True)], axis=0
+        )
+        inputs = tf.reshape(inputs, new_shape)
+        return inputs
+
 
 @OPERATOR.register_operator("Split")
 class TFSplit():
