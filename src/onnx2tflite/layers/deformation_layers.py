@@ -137,11 +137,12 @@ class TFFlatten():
 class TFSplit():
     def __init__(self, tensor_grap, node_weights, node_inputs, node_attribute, *args, **kwargs)->None:
         super().__init__()
-        index = kwargs.get('index', 0)
+        split = node_weights[node_inputs[1]]
+        index = kwargs.get("index", 0)
         start = 0
         for i in range(index):
-            start += int(node_attribute['split'][i])
-        end = start + node_attribute['split'][index]
+            start += int(split[i])
+        end = start + split[index]
         self.indices = tf.keras.backend.arange(start, end, 1)
         self.axis = dimension_utils.channel_to_last_dimension(node_attribute.get("axis", 0))
 
