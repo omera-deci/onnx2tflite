@@ -30,8 +30,8 @@ def get_number(tensor_grap, node_weights, node_inputs):
             second_operand = second_operand[np.newaxis, ...]
             for _ in range(len(first_operand.shape) - 2):
                 second_operand = second_operand[..., np.newaxis]
-        elif (len(first_operand.shape) == 2 or len(first_operand.shape) == 3) and second_operand.ndim == 2:
-            second_operand = second_operand.transpose(1, 0)
+        # elif (len(first_operand.shape) == 2 or len(first_operand.shape) == 3) and second_operand.ndim == 2:
+        #     second_operand = second_operand.transpose(1, 0)
         else:
             second_operand = dimension_utils.tensor_NCD_to_NDC_format(second_operand)
     elif (not first_operand_flg) and second_operand_flg:
@@ -41,8 +41,8 @@ def get_number(tensor_grap, node_weights, node_inputs):
             first_operand = first_operand[np.newaxis, ...]
             for _ in range(len(second_operand.shape) - 2):
                 first_operand = first_operand[..., np.newaxis]
-        elif first_operand.ndim == 2 and (len(second_operand.shape) == 2 or len(second_operand.shape) == 3):
-            first_operand = first_operand.transpose(1, 0)
+        # elif first_operand.ndim == 2 and (len(second_operand.shape) == 2 or len(second_operand.shape) == 3):
+        #     first_operand = first_operand.transpose(1, 0)
         else:
             first_operand = dimension_utils.tensor_NCD_to_NDC_format(first_operand)
 
