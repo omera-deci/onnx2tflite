@@ -6,6 +6,30 @@ from . import dimension_utils
 
 LOG = logging.getLogger("deformation_layers :")
 
+TRANSPOSE_WITH_TFLITE_COMPAT = False
+
+
+def tflite_compat_transpose(tensor, perm):
+    """
+    Apply transpose that is compatible with TFLite.
+    This only works for tensors with static shapes.
+    """
+    # builtin tflite supports transpose of up to 5 dimensions
+    TFLITE_MAX_TRANSPOSE_RANK = 5
+    if tensor.shape.rank <= TFLITE_MAX_TRANSPOSE_RANK or not TRANSPOSE_WITH_TFLITE_COMPAT:
+        return tf.transpose(tensor, perm)
+
+    perm = tf.convert_to_tensor(perm)
+    # unstack along the new zeroth axis
+    new_first_axis = perm[0]
+    new_perm = perm[1:] - tf.cast(perm[1:] > new_first_axis, tf.int32)
+    tensors = tf.unstack(tensor, axis=new_first_axis)
+    # recursively transpose lower-ranked tensors
+    tensors = [tflite_compat_transpose(t, new_perm) for t in tensors]
+    # restack on axis 0
+    return tf.stack(tensors, axis=0)
+
+
 @OPERATOR.register_operator("Transpose")
 class TFTranspose():
     def __init__(self, tensor_grap, node_weights, node_inputs, node_attribute, *args, **kwargs)->None:
@@ -30,12 +54,12 @@ class TFTranspose():
 
     def __call__(self, inputs):
         if self.trans_in and self.trans_out:
-            inputs = tf.transpose(inputs, perm=self.trans_in)
-            inputs = tf.transpose(inputs, perm=self.perm_list)
-            inputs = tf.transpose(inputs, perm=self.trans_out)
+            inputs = tflite_compat_transpose(inputs, perm=self.trans_in)
+            inputs = tflite_compat_transpose(inputs, perm=self.perm_list)
+            inputs = tflite_compat_transpose(inputs, perm=self.trans_out)
             return inputs
         else:
-            return tf.transpose(inputs, perm=self.perm_list)
+            return tflite_compat_transpose(inputs, perm=self.perm_list)
 
 @OPERATOR.register_operator("Slice")
 class TFSlice():
@@ -97,9 +121,9 @@ class TFReshape():
         self.trans_out = [0] + [n for n in range(2, self.out_shape.shape[0])] + [1]
 
     def __call__(self, inputs):
-        inputs = tf.transpose(inputs, perm=self.trans_in)
+        inputs = tflite_compat_transpose(inputs, perm=self.trans_in)
         inputs = tf.reshape(inputs, shape=self.out_shape)
-        inputs = tf.transpose(inputs, perm=self.trans_out)
+        inputs = tflite_compat_transpose(inputs, perm=self.trans_out)
         return inputs
         
 @OPERATOR.register_operator("Flatten")
@@ -115,7 +139,7 @@ class TFFlatten():
         # transpose to channels-first
         axes = tuple(range(len(inputs.shape)))
         axes_perm = axes[0:1] + axes[-1:] + axes[1:-1]
-        inputs = tf.transpose(inputs, perm=axes_perm)
+        inputs = tflite_compat_transpose(inputs, perm=axes_perm)
 
         # flatten
         inputs_shape = tf.shape(inputs)
@@ -187,9 +211,13 @@ class TFDepthToSpace():
         elif self.mode == "CRD":
             # help want, native tensorflow is not support CRD mode, this way will generate 5 dims op.
             b, h, w, c = inputs.shape
-            tmp = tf.reshape(inputs, [b, h, w, c//(self.block_size * self.block_size), self.block_size, self.block_size])
-            tmp = tf.transpose(tmp, perm=[0, 1, 4, 2, 5, 3])
-            tmp = tf.reshape(tmp, [b, h*self.block_size, w*self.block_size, c//(self.block_size * self.block_size)])
+            tmp = tf.reshape(
+                inputs, [b, h, w, c // (self.block_size * self.block_size), self.block_size, self.block_size]
+            )
+            tmp = tflite_compat_transpose(tmp, perm=[0, 1, 4, 2, 5, 3])
+            tmp = tf.reshape(
+                tmp, [b, h * self.block_size, w * self.block_size, c // (self.block_size * self.block_size)]
+            )
             return tmp
         else:
             raise KeyError(f"For DepthToSpace, mode must be [DCR, CRD], not {self.mode}")

@@ -9,6 +9,7 @@ from onnx import numpy_helper
 from .op_registry import OPERATOR
 
 from ..layers import conv_layers
+from ..layers import deformation_layers
 
 def representative_dataset_gen(img_root, img_size, mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375]):
     '''
@@ -75,10 +76,18 @@ def decode_node_attribute(node)->dict:
                 return list(getattr(onnx_attr, attr_type))
     return {arg.name: onnx_attribute_to_dict(arg) for arg in node.attribute}
 
-def keras_builder(onnx_model, new_input_nodes:list=None, new_output_nodes:list=None, native_groupconv:bool=False):
+
+def keras_builder(
+    onnx_model,
+    new_input_nodes: list = None,
+    new_output_nodes: list = None,
+    native_groupconv: bool = False,
+    tflite_compat: bool = False,
+):
 
     conv_layers.USE_NATIVE_GROUP_CONV = native_groupconv
     
+    deformation_layers.TRANSPOSE_WITH_TFLITE_COMPAT = tflite_compat
     model_graph = onnx_model.graph
 
     '''

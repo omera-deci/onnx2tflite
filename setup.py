@@ -19,7 +19,7 @@ def read_requirements(req_path: str):
 
 setup(
     name="onnx2tflite",
-    version="0.0.1",
+    version="0.0.2",
     description="Tool for onnx->keras or onnx->tflite",
     author="MPolaris",
     url="https://github.com/MPolaris/onnx2tflite",
