@@ -1,5 +1,5 @@
 onnx
-onnxruntime
+onnxruntime-gpu
 onnx-simplifier
 numpy
 tensorflow>=2.5
