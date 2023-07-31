@@ -11,15 +11,9 @@ def onnx_converter(
     output_path: str = None,
     input_node_names: list = None,
     output_node_names: list = None,
-    need_simplify: bool = True,
     native_groupconv: bool = False,
-    weight_quant: bool = False,
-    int8_model: bool = False,
-    image_root: str = None,
-    int8_mean: list or float = [123.675, 116.28, 103.53],
-    int8_std: list or float = [58.395, 57.12, 57.375],
 ):
-    model_proto = load_onnx_modelproto(onnx_model_path, need_simplify)
+    model_proto = load_onnx_modelproto(onnx_model_path)
 
     keras_model = keras_builder(model_proto, input_node_names, output_node_names, native_groupconv)
 
@@ -48,36 +42,11 @@ def parse_opt():
         default=None,
         help="which outputs is you want, support middle layers, None will using onnx orignal outputs",
     )
-    parser.add_argument("--nosimplify", default=False, action="store_true", help="do not simplify model")
     parser.add_argument(
         "--native-groupconv",
         default=False,
         action="store_true",
         help="using native method for groupconv, only support for tflite version >= 2.9",
-    )
-    parser.add_argument("--weigthquant", default=False, action="store_true", help="tflite weigth int8 quant")
-    parser.add_argument(
-        "--int8", default=False, action="store_true", help="tflite weigth int8 quant, include input output"
-    )
-    parser.add_argument(
-        "--imgroot",
-        type=str,
-        default=None,
-        help="when int8=True, imgroot should give for calculating running_mean and running_norm",
-    )
-    parser.add_argument(
-        "--int8mean",
-        type=float,
-        nargs="+",
-        default=[0.485, 0.456, 0.406],
-        help="int8 image preprocesses mean, float or list",
-    )
-    parser.add_argument(
-        "--int8std",
-        type=float,
-        nargs="+",
-        default=[0.229, 0.224, 0.225],
-        help="int8 image preprocesses std, float or list",
     )
     opt = parser.parse_args()
     return opt
@@ -87,16 +56,10 @@ def run():
     opt = parse_opt()
     onnx_converter(
         onnx_model_path=opt.weights,
-        need_simplify=not opt.nosimplify,
         input_node_names=opt.input_node_names,
         output_node_names=opt.output_node_names,
         output_path=opt.outpath,
         native_groupconv=opt.native_groupconv,
-        weight_quant=opt.weigthquant,
-        int8_model=opt.int8,
-        int8_mean=opt.int8mean,
-        int8_std=opt.int8std,
-        image_root=opt.imgroot,
     )
 
 
